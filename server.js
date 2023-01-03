@@ -35,7 +35,6 @@ class CallHandler {
 
     createServer(function (req, res) {
       if (req.url == "/out") {
-        console.log("req out");
         readFile("nohup.out", "utf-8", (err, data) => {
           if (err) {
             next(err); // Pass errors to Express.
