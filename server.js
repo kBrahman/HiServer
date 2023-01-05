@@ -29,10 +29,6 @@ class CallHandler {
     this.ws = new WebSocketServer({ server: this.server });
     this.ws.on("connection", this.onConnection);
 
-    //     console.log(
-    //       "Start WSS Server: bind => wss://0.0.0.0:" + wss_server_port
-    //     );
-
     createServer(function (req, res) {
       if (req.url == "/out") {
         readFile("nohup.out", "utf-8", (err, data) => {
@@ -141,6 +137,7 @@ class CallHandler {
           break;
         case BYE:
           client = this._getById(message.to);
+          if (client == null) return;
           client_self.peerId = undefined;
           client.peerId = undefined;
           client.blockedPeers.add(client_self.id);
