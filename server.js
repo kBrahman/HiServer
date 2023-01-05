@@ -128,6 +128,7 @@ class CallHandler {
         case NEXT: this._getPeerAndSend(client_self)
         break;
         case NEW:
+          this._checkDeadClient(this.clients,message.id)
           client_self.id = "" + message.id
           client_self.busy = true
           client_self.name = message.name
@@ -194,9 +195,15 @@ class CallHandler {
           if (peer == null) {
             client_self.busy = false;
             client_self.peerId = undefined;
-            return;
-          }
-          client_self.send(JSON.stringify(peer));
+          }else client_self.send(JSON.stringify(peer));
+  }
+
+  _checkDeadClient(clients,id) {
+    const client=this._getById(id)
+    if(client!=null){
+      clients.delete(client)
+      console.log('removed dead client:'+id)
+    }
   }
 
   _findAndSend(msg, to) {
