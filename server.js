@@ -11,6 +11,7 @@ const BYE = "bye";
 const NEW = "new";
 const NEXT = "next";
 const REPORT = "report";
+const KEEPALIVE = "keepalive";
 
 class CallHandler {
   constructor() {
@@ -103,7 +104,9 @@ class CallHandler {
           if (code == undefined || code < 69) {
             msg = { type: "update" };
             client_self.send(JSON.stringify(msg));
-            console.log(`version: ${v} from: ${message.id}. Must update`);
+            console.log(
+              `version: ${message.v} from: ${message.id}. Must update`
+            );
             return;
           }
           console.log(JSON.stringify(message));
@@ -135,6 +138,7 @@ class CallHandler {
           client_self.name = message.name;
           client_self.blockedPeers = new Set(message.blockedPeers);
           this._getPeerAndSend(client_self);
+          client_self.send(JSON.stringify({ type: KEEPALIVE }));
           break;
         case BYE:
           client = this._getById(message.to);
@@ -172,8 +176,8 @@ class CallHandler {
           message.from = client_self.id;
           client.send(JSON.stringify(message));
           break;
-        case "keepalive":
-          client_self.send(JSON.stringify({ type: "keepalive" }));
+        case KEEPALIVE:
+          client_self.send(JSON.stringify({ type: KEEPALIVE }));
           break;
         default:
           console.log("Unhandled message: " + message.type);
