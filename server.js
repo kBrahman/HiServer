@@ -100,7 +100,7 @@ class CallHandler {
         message = JSON.parse(message);
         if (message.type == "new") {
           let code = message.code;
-          if (code == undefined || code < 64) {
+          if (code == undefined || code < 69) {
             msg = { type: "update" };
             client_self.send(JSON.stringify(msg));
             console.log(`version: ${v} from: ${message.id}. Must update`);
