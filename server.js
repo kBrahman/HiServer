@@ -81,7 +81,8 @@ class CallHandler {
     client_self.on("close", (code) => {
       console.log("close code=>" + code);
       if (client_self.peerId != undefined) {
-        let client = this._getById(client_self.peerId);
+        const client = this._getById(client_self.peerId);
+        if (client == null) return;
         console.log("got by id=>" + client.id);
         client.peerId = undefined;
         client.send(JSON.stringify({ type: "bye" }));
