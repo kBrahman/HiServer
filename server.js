@@ -12,6 +12,7 @@ const NEW = "new";
 const NEXT = "next";
 const REPORT = "report";
 const KEEPALIVE = "keepalive";
+const OFFER_TIMEOUT = 'offer_timeout';
 
 class CallHandler {
   constructor() {
@@ -34,7 +35,7 @@ class CallHandler {
       if (req.url == "/out") {
         readFile("nohup.out", "utf-8", (err, data) => {
           if (err) {
-            next(err); // Pass errors to Express.
+            console.log('err outing');
           } else {
             res.writeHead(200, { "Content-Type": "text/plain" });
             console.log("len=>" + data.length);
@@ -78,7 +79,6 @@ class CallHandler {
   };
 
   onConnection = (client_self) => {
-    this.clients.add(client_self);
     client_self.on("close", (code) => {
       console.log("close code=>" + code);
       if (client_self.peerId != undefined) {
@@ -138,16 +138,17 @@ class CallHandler {
           client_self.name = message.name;
           client_self.blockedPeers = new Set(message.blockedPeers);
           this._getPeerAndSend(client_self);
+          this.clients.add(client_self);
           client_self.send(JSON.stringify({ type: KEEPALIVE }));
           break;
         case BYE:
+          this._addToBlockedAndFindNewPeer(client_self, message.to);
+          client_self.peerId = undefined;
           client = this._getById(message.to);
           if (client == null) return;
-          client_self.peerId = undefined;
           client.peerId = undefined;
           client.blockedPeers.add(client_self.id);
           client.send(JSON.stringify({ type: BYE }));
-          this._addToBlockedAndFindNewPeer(client_self, client.id);
           break;
         case OFFER:
           client = this._getById(message.to);
@@ -178,6 +179,11 @@ class CallHandler {
           break;
         case KEEPALIVE:
           client_self.send(JSON.stringify({ type: KEEPALIVE }));
+          break;
+        case OFFER_TIMEOUT:
+          client = this._getById(message.to);
+          if(client!=null) this.clients.delete(client);
+          this._getPeerAndSend(client_self);
           break;
         default:
           console.log("Unhandled message: " + message.type);
