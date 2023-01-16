@@ -2,6 +2,7 @@ import { readFile, truncate } from "fs";
 import { WebSocketServer } from "ws";
 import { createServer } from "http";
 import https from "https";
+import { time } from "console";
 
 const OFFER = "offer";
 const ANSWER = "answer";
@@ -12,7 +13,7 @@ const NEW = "new";
 const NEXT = "next";
 const REPORT = "report";
 const KEEPALIVE = "keepalive";
-const OFFER_TIMEOUT = 'offer_timeout';
+const OFFER_TIMEOUT = "offer_timeout";
 
 class CallHandler {
   constructor() {
@@ -35,7 +36,7 @@ class CallHandler {
       if (req.url == "/out") {
         readFile("nohup.out", "utf-8", (err, data) => {
           if (err) {
-            console.log('err outing');
+            console.log("err outing");
           } else {
             res.writeHead(200, { "Content-Type": "text/plain" });
             console.log("len=>" + data.length);
@@ -61,10 +62,15 @@ class CallHandler {
     }).listen(8080, "0.0.0.0");
   }
 
+  _expired = (time) => Date.now() - time < 120000;
+
   _getFreePeer = (client_self) => {
     console.log("get free peer from " + this.clients.size);
+    let expiredClient;
     for (const client of this.clients) {
       if (client_self.id === client.id) continue;
+      if (expiredClient === undefined && this._expired(client.time))
+        expiredClient = client;
       console.log(`id=${client.id}, busy=${client.busy}`);
       if (
         client.busy === false &&
@@ -74,6 +80,10 @@ class CallHandler {
         client.busy = true;
         return { type: PEER, id: client.id, name: client.name };
       }
+    }
+    if (expiredClient !== undefined) {
+      this.clients.delete(expiredClient);
+      console.log("removed expired client:" + expiredClient.id);
     }
     return null;
   };
@@ -123,7 +133,7 @@ class CallHandler {
       } catch (e) {
         console.log(e.message);
       }
-
+      client_self.time = Date.now();
       switch (message.type) {
         case REPORT:
           this._findAndSend({ type: REPORT }, message.to);
@@ -182,7 +192,7 @@ class CallHandler {
           break;
         case OFFER_TIMEOUT:
           client = this._getById(message.to);
-          if(client!=null) this.clients.delete(client);
+          if (client != null) this.clients.delete(client);
           this._getPeerAndSend(client_self);
           break;
         default:
@@ -220,18 +230,8 @@ class CallHandler {
   }
 
   _findAndSend(msg, to) {
-    for (let client of this.clients) {
-      if (client.id === to) {
-        try {
-          client.send(JSON.stringify(msg));
-        } catch (e) {
-          console.log("failed to find and send:" + e.message);
-          return false;
-        }
-        return true;
-      }
-    }
-    return false;
+    const client = this._getById(to);
+    if (client != null) client.send(JSON.stringify(msg));
   }
 }
 
