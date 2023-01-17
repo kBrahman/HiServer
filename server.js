@@ -39,8 +39,7 @@ class CallHandler {
             console.log("err outing");
           } else {
             res.writeHead(200, { "Content-Type": "text/plain" });
-            console.log("len=>" + data.length);
-            if (data.length > 71056646) {
+            if (data.length > 71056647) {
               truncate("nohup.out", 0, () => {});
               res.write("file contents deleted");
             } else {
@@ -62,7 +61,7 @@ class CallHandler {
     }).listen(8080, "0.0.0.0");
   }
 
-  _expired = (time) => Date.now() - time < 120000;
+  _expired = (time) => Date.now() - time > 120001;
 
   _getFreePeer = (client_self) => {
     console.log("get free peer from " + this.clients.size);
